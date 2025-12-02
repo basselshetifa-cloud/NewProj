@@ -74,7 +74,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         keywords = []
         try:
             with open(config_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read().lower()
+                content = f.read()
                 # Try to parse as JSON
                 try:
                     data = json.loads(content)
@@ -93,7 +93,9 @@ class PremiumCookieCheckerGUI(ctk.CTk):
                 if not keywords:
                     filename = os.path.basename(config_path)
                     base_name = filename.replace('.json', '').replace('.loli', '').lower()
-                    keywords = [base_name, base_name.replace('_', ''), base_name.replace(' ', '')]
+                    # Use set to avoid duplicates
+                    keyword_set = {base_name, base_name.replace('_', ''), base_name.replace(' ', '')}
+                    keywords = list(keyword_set)
         except Exception as e:
             # Fallback to filename
             filename = os.path.basename(config_path)
@@ -408,8 +410,8 @@ class PremiumCookieCheckerGUI(ctk.CTk):
                 config = self.configs[config_name]
                 keywords = config['keywords']
                 
-                # Check if any keyword is in the cookie file
-                if any(keyword.lower() in content for keyword in keywords):
+                # Check if any keyword is in the cookie file (keywords already lowercased)
+                if any(keyword in content for keyword in keywords):
                     with self.lock:
                         self.stats[config_name] += 1
                         self.valid_cookies[config_name].append(cookie_file)
@@ -421,7 +423,9 @@ class PremiumCookieCheckerGUI(ctk.CTk):
                             )
                     
                     # Save to hits file in config-specific folder
-                    config_folder = os.path.join(results_folder, config_name.replace(' ', '_'))
+                    # Sanitize config name for filesystem
+                    safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in config_name)
+                    config_folder = os.path.join(results_folder, safe_name.replace(' ', '_'))
                     os.makedirs(config_folder, exist_ok=True)
                     hits_file = os.path.join(config_folder, "hits.txt")
                     
