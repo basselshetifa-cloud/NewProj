@@ -11,6 +11,8 @@ import time
 import os
 import json
 import asyncio
+import multiprocessing as mp
+import warnings
 
 # Import engines
 try:
@@ -18,21 +20,21 @@ try:
     FAST_ENGINE_AVAILABLE = True
 except ImportError:
     FAST_ENGINE_AVAILABLE = False
-    print("⚠️ FastEngine not available")
+    warnings.warn("FastEngine not available", ImportWarning)
 
 try:
     from performance_checker import PerformanceChecker
     PERF_CHECKER_AVAILABLE = True
 except ImportError:
     PERF_CHECKER_AVAILABLE = False
-    print("⚠️ PerformanceChecker not available")
+    warnings.warn("PerformanceChecker not available", ImportWarning)
 
 try:
     from selenium_checker import SeleniumChecker
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
-    print("⚠️ Selenium not available - Selenium engine disabled")
+    warnings.warn("Selenium not available - Selenium engine disabled", ImportWarning)
 
 try:
     from openbullet_editor import OpenBulletEditor
@@ -517,7 +519,6 @@ class MinimalCookieChecker(ctk.CTk):
 
 
 if __name__ == "__main__":
-    import multiprocessing as mp
     mp.freeze_support()  # Required for Windows multiprocessing
     
     app = MinimalCookieChecker()

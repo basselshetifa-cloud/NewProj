@@ -2,12 +2,14 @@
 Stealth Checker with Playwright
 Optional: Falls back gracefully if playwright-stealth not available
 """
+import warnings
+
 try:
     from playwright.sync_api import sync_playwright
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
-    print("⚠️ Playwright not available")
+    warnings.warn("Playwright not available - install with: pip install playwright playwright-stealth", ImportWarning)
 
 try:
     from playwright_stealth import stealth_sync

@@ -54,7 +54,7 @@ echo "[3/5] Building executable..."
 STEALTH_PATH=$(python3 -c "try:
     import playwright_stealth, os
     print(os.path.dirname(playwright_stealth.__file__))
-except:
+except ImportError:
     pass" 2>/dev/null)
 
 if [ -n "$STEALTH_PATH" ]; then

@@ -55,7 +55,7 @@ echo [3/5] Building executable...
 
 REM Find playwright-stealth installation path
 set STEALTH_PATH=
-for /f "delims=" %%i in ('python -c "try: import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))\nexcept: pass"') do set STEALTH_PATH=%%i
+for /f "delims=" %%i in ('python -c "try: import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))\nexcept ImportError: pass"') do set STEALTH_PATH=%%i
 
 if defined STEALTH_PATH (
     echo   √ Found playwright-stealth at: %STEALTH_PATH%

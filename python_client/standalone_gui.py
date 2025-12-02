@@ -14,6 +14,7 @@ import time
 import os
 import json
 import asyncio
+import warnings
 
 # Import engines
 try:
@@ -33,14 +34,14 @@ try:
     STEALTH_AVAILABLE = True
 except ImportError:
     STEALTH_AVAILABLE = False
-    print("⚠️ Playwright-stealth not available - Playwright engine disabled")
+    warnings.warn("Playwright-stealth not available - Playwright engine disabled", ImportWarning)
 
 try:
     from selenium_checker import SeleniumChecker
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
-    print("⚠️ Selenium not available - Selenium engine disabled")
+    warnings.warn("Selenium not available - Selenium engine disabled", ImportWarning)
 
 try:
     from openbullet_editor import OpenBulletEditor
