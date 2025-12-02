@@ -12,6 +12,7 @@ pyinstaller ^
     --onefile ^
     --windowed ^
     --name "CookieChecker-Original" ^
+    --add-data "configs;configs" ^
     --optimize=2 ^
     --noconfirm ^
     cookie_checker.py
@@ -22,9 +23,9 @@ if exist "dist\CookieChecker-Original.exe" (
     echo 📁 File: dist\CookieChecker-Original.exe
     echo.
     echo 🎯 Features:
-    echo    - Simple keyword-based checking
-    echo    - Multi-threaded scanning
-    echo    - 22+ service support
+    echo    - Dynamic config loading from configs/
+    echo    - 4-column checkbox grid
+    echo    - Multi-threaded scanning (50 threads)
     echo    - Real-time CPM tracking
 ) else (
     echo ❌ Build Failed!

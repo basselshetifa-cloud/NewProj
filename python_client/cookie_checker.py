@@ -3,44 +3,20 @@ import threading
 import tkinter.filedialog as fd
 import time
 import webbrowser
+import json
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 import customtkinter as ctk
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
-
-CHECKERS = {
-    "Steam": ["steam", "account_id", "sessionid", "steamid", "steam_login"],
-    "Roblox": ["roblox", "rbx", "sessionid", "account_id"],
-    "HumbleBundle": ["humblebundle", "humble", "sessionid", "account_id"],
-    "PSN": ["psn", "playstation", "sessionid", "account_id"],
-    "Genshin": ["genshin", "mihoyo", "sessionid", "account_id"],
-    "Tarkov": ["tarkov", "battlestate", "sessionid", "account_id"],
-    "FunPay": ["funpay", "sessionid", "account_id"],
-    "LinkedIn": ["linkedin", "sessionid", "account_id"],
-    "YouTube": ["youtube", "google", "sessionid", "account_id"],
-    "Twitch": ["twitch", "sessionid", "account_id"],
-    "TikTok": ["tiktok", "sessionid", "account_id"],
-    "Instagram": ["instagram", "sessionid", "account_id"],
-    "Twitter": ["twitter", "x-csrf-token", "sessionid", "account_id"],
-    "Facebook": ["facebook", "c_user", "xs", "account_id"],
-    "Amazon": ["amazon", "at-main", "sess-at-main", "sessionid", "account_id"],
-    "Netflix": ["netflix", "NetflixId", "SecureNetflixId", "sessionid", "account_id"],
-    "Yahoo": ["yahoo", "sessionid", "account_id"],
-    "Gmail": ["gmail", "google", "sessionid", "account_id"],
-    "Outlook": ["outlook", "live.com", "sessionid", "account_id"],
-    "Aol.com": ["aol.com", "sessionid", "account_id"],
-    "Rambler.ru": ["rambler.ru", "sessionid", "account_id"],
-    "Mail.ru": ["mail.ru", "sessionid", "account_id"],
-    "Yandex.ru": ["yandex.ru", "sessionid", "account_id"]
-}
 
 NUM_THREADS = 50
 
 class PremiumCookieCheckerGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Premium Cookie Checker")
+        self.title("Cookie Checker")
         self.geometry("1200x800")
         self.resizable(True, True)
         
@@ -49,7 +25,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.bg_medium = "#191C1E"
         self.bg_light = "#151718"
         self.text_color = "#FFFFFF"
-        self.button_color = "#2ECC71"
+        self.button_color = "#009965"
         
         self.folder_path = ""
         self.proxy_path = ""
@@ -65,11 +41,72 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.lock = threading.Lock()
         self.search_text = ""
         
+        # Load configs dynamically
+        self.configs = self.load_configs()
+        self.config_vars = {}
+        self.config_count_labels = {}
+        
         self.setup_ui()
+    
+    def load_configs(self):
+        """Load config files dynamically from configs folder"""
+        configs = {}
+        # Try both configs/ and ../configs/
+        folder = "configs" if os.path.exists("configs") else "../configs"
+        
+        if not os.path.exists(folder):
+            # Can't log yet, UI not setup
+            return configs
+        
+        for file in os.listdir(folder):
+            if file.endswith(('.json', '.loli')):
+                # Create clean config name
+                name = file.replace('.json', '').replace('.loli', '').replace('_', ' ').title()
+                configs[name] = {
+                    'path': os.path.join(folder, file),
+                    'keywords': self.extract_keywords(os.path.join(folder, file))
+                }
+        
+        return configs
+    
+    def extract_keywords(self, config_path):
+        """Extract keywords from config file for simple checking"""
+        keywords = []
+        try:
+            with open(config_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                # Try to parse as JSON
+                try:
+                    data = json.loads(content)
+                    # Extract common keyword patterns
+                    if 'name' in data:
+                        keywords.append(data['name'].lower())
+                    if 'service' in data:
+                        keywords.append(data['service'].lower())
+                    if 'keywords' in data:
+                        keywords.extend([k.lower() for k in data['keywords']])
+                except json.JSONDecodeError:
+                    # For .loli files or invalid JSON, extract from filename
+                    pass
+                
+                # If no keywords found, use filename as keyword
+                if not keywords:
+                    filename = os.path.basename(config_path)
+                    base_name = filename.replace('.json', '').replace('.loli', '').lower()
+                    # Use set to avoid duplicates
+                    keyword_set = {base_name, base_name.replace('_', ''), base_name.replace(' ', '')}
+                    keywords = list(keyword_set)
+        except Exception as e:
+            # Fallback to filename
+            filename = os.path.basename(config_path)
+            base_name = filename.replace('.json', '').replace('.loli', '').lower()
+            keywords = [base_name]
+        
+        return keywords
     
     def setup_ui(self):
         # Title
-        self.title_label = ctk.CTkLabel(self, text="Premium Cookie Checker", 
+        self.title_label = ctk.CTkLabel(self, text="Cookie Checker", 
                                        font=("Segoe UI", 26, "bold"))
         self.title_label.place(x=240, y=8)
         
@@ -155,32 +192,40 @@ class PremiumCookieCheckerGUI(ctk.CTk):
                                      text_color=self.button_color)
         self.cpm_label.place(x=10, y=stats_y + 20)
         
-        # Service checkboxes (3 columns)
-        services_frame = ctk.CTkFrame(self, fg_color=self.bg_medium)
+        # Service checkboxes (4 columns)
+        services_frame = ctk.CTkFrame(self, fg_color=self.bg_dark)
         services_frame.place(x=240, y=120, width=950, height=200)
         
-        ctk.CTkLabel(services_frame, text="Select Services to Check", 
+        ctk.CTkLabel(services_frame, text="Select Configs to Check", 
                     font=("Segoe UI", 16, "bold")).place(x=10, y=10)
         
-        self.service_vars = {}
-        services_list = list(CHECKERS.keys())
-        
-        # 3 columns layout
-        col_width = 310
+        # 4 columns layout for configs
+        config_names = list(self.configs.keys())
+        col_width = 230
         start_y = 45
         row_height = 25
         
-        for i, service in enumerate(services_list):
-            col = i % 3
-            row = i // 3
+        for i, config_name in enumerate(config_names):
+            col = i % 4  # 4 columns
+            row = i // 4
             x = 10 + (col * col_width)
             y = start_y + (row * row_height)
             
             var = ctk.BooleanVar()
-            self.service_vars[service] = var
-            checkbox = ctk.CTkCheckBox(services_frame, text=service, variable=var,
-                                      width=290)
-            checkbox.place(x=x, y=y)
+            self.config_vars[config_name] = var
+            
+            # Create frame for checkbox and count
+            config_frame = ctk.CTkFrame(services_frame, fg_color="transparent")
+            config_frame.place(x=x, y=y, width=220, height=25)
+            
+            checkbox = ctk.CTkCheckBox(config_frame, text=f"{config_name}: ", 
+                                      variable=var, width=180)
+            checkbox.pack(side="left")
+            
+            count_label = ctk.CTkLabel(config_frame, text="0", 
+                                      font=("Segoe UI", 10, "bold"))
+            count_label.pack(side="left")
+            self.config_count_labels[config_name] = count_label
         
         # Search bar
         search_frame = ctk.CTkFrame(self, fg_color=self.bg_medium)
@@ -198,7 +243,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         
         # Output text box
         self.output_text = ctk.CTkTextbox(self, width=950, height=340, 
-                                         font=("Consolas", 10),
+                                         font=("Consolas", 14),
                                          fg_color=self.bg_light)
         self.output_text.place(x=240, y=390)
         
@@ -206,7 +251,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.start_btn = ctk.CTkButton(self, text="START", width=200, height=50,
                                       font=("Segoe UI", 16, "bold"),
                                       fg_color=self.button_color, 
-                                      hover_color="#27AE60",
+                                      hover_color="#00805A",
                                       command=self.start_checking)
         self.start_btn.place(x=990, y=740)
     
@@ -293,11 +338,11 @@ class PremiumCookieCheckerGUI(ctk.CTk):
             self.log_output("❌ Please load cookie files first!")
             return
         
-        # Get selected services
-        selected_services = [service for service, var in self.service_vars.items() if var.get()]
+        # Get selected configs
+        selected_configs = [config for config, var in self.config_vars.items() if var.get()]
         
-        if not selected_services:
-            self.log_output("❌ Please select at least one service!")
+        if not selected_configs:
+            self.log_output("❌ Please select at least one config!")
             return
         
         self.stop_flag.clear()
@@ -307,66 +352,101 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.total_checked = 0
         self.start_time = time.time()
         
-        self.log_output(f"🚀 Starting check for {len(selected_services)} services...")
+        self.log_output(f"🚀 Starting check for {len(selected_configs)} configs...")
         self.log_output(f"📁 Total files: {len(self.cookies_files)}")
-        self.log_output(f"⚡ Checking sequentially with keyword matching...")
+        self.log_output(f"⚡ Using {NUM_THREADS} threads with keyword matching...")
         
         # Start checking in separate thread
-        threading.Thread(target=self.check_cookies, args=(selected_services,), daemon=True).start()
+        threading.Thread(target=self.check_cookies, args=(selected_configs,), daemon=True).start()
         threading.Thread(target=self.update_cpm, daemon=True).start()
     
-    def check_cookies(self, selected_services):
+    def check_cookies(self, selected_configs):
         results_folder = "CookieChecker_Results"
         if not os.path.exists(results_folder):
             os.makedirs(results_folder)
         
-        for i, cookie_file in enumerate(self.cookies_files):
-            if self.stop_flag.is_set():
-                break
+        # Use ThreadPoolExecutor for multi-threading
+        with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+            futures = []
+            for cookie_file in self.cookies_files:
+                if self.stop_flag.is_set():
+                    break
+                future = executor.submit(self.check_cookie_file, cookie_file, selected_configs, results_folder)
+                futures.append(future)
             
-            while self.pause_flag.is_set():
-                time.sleep(0.1)
-            
-            try:
-                with open(cookie_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read().lower()
-                
-                # Check each selected service
-                for service in selected_services:
-                    keywords = CHECKERS[service]
-                    # Check if any keyword is in the cookie file
-                    if any(keyword.lower() in content for keyword in keywords):
-                        with self.lock:
-                            self.stats[service] += 1
-                            self.valid_cookies[service].append(cookie_file)
-                        
-                        # Save to hits file
-                        hits_file = os.path.join(results_folder, f"{service}_hits.txt")
-                        with open(hits_file, 'a', encoding='utf-8') as hf:
-                            hf.write(f"{cookie_file}\n")
-                        
-                        self.log_output(f"✅ {service} HIT: {os.path.basename(cookie_file)}")
-                
-                with self.lock:
-                    self.total_checked += 1
-                    remaining = len(self.cookies_files) - self.total_checked
-                    self.remains_label.configure(text=str(remaining))
-                    self.found_label.configure(text=str(self.total_checked))
-                    total_hits = sum(self.stats.values())
-                    self.valid_label.configure(text=str(total_hits))
-            
-            except Exception as e:
-                with self.lock:
-                    self.stats['errors'] += 1
-                    self.errors_label.configure(text=str(self.stats['errors']))
-                self.log_output(f"❌ Error checking {os.path.basename(cookie_file)}: {str(e)}")
+            # Wait for all to complete
+            for future in futures:
+                if self.stop_flag.is_set():
+                    break
+                try:
+                    future.result()
+                except Exception as e:
+                    with self.lock:
+                        self.stats['errors'] += 1
+                        self.errors_label.configure(text=str(self.stats['errors']))
+                    self.log_output(f"❌ Error in thread: {str(e)}")
         
         self.log_output("\n🎉 Checking completed!")
         self.log_output(f"📊 Total checked: {self.total_checked}")
         self.log_output(f"✅ Total hits: {sum(self.stats.values())}")
-        for service, count in self.stats.items():
-            if service != 'errors':
-                self.log_output(f"   - {service}: {count}")
+        for config, count in self.stats.items():
+            if config != 'errors':
+                self.log_output(f"   - {config}: {count}")
+    
+    def check_cookie_file(self, cookie_file, selected_configs, results_folder):
+        """Check a single cookie file against selected configs"""
+        while self.pause_flag.is_set():
+            time.sleep(0.1)
+        
+        if self.stop_flag.is_set():
+            return
+        
+        try:
+            with open(cookie_file, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read().lower()
+            
+            # Check each selected config
+            for config_name in selected_configs:
+                config = self.configs[config_name]
+                keywords = config['keywords']
+                
+                # Check if any keyword is in the cookie file (keywords already lowercased)
+                if any(keyword in content for keyword in keywords):
+                    with self.lock:
+                        self.stats[config_name] += 1
+                        self.valid_cookies[config_name].append(cookie_file)
+                        
+                        # Update config count in UI
+                        if config_name in self.config_count_labels:
+                            self.config_count_labels[config_name].configure(
+                                text=str(self.stats[config_name])
+                            )
+                    
+                    # Save to hits file in config-specific folder
+                    # Sanitize config name for filesystem
+                    safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in config_name)
+                    config_folder = os.path.join(results_folder, safe_name.replace(' ', '_'))
+                    os.makedirs(config_folder, exist_ok=True)
+                    hits_file = os.path.join(config_folder, "hits.txt")
+                    
+                    with open(hits_file, 'a', encoding='utf-8') as hf:
+                        hf.write(f"{cookie_file}\n")
+                    
+                    self.log_output(f"✅ {config_name} HIT: {os.path.basename(cookie_file)}")
+            
+            with self.lock:
+                self.total_checked += 1
+                remaining = len(self.cookies_files) - self.total_checked
+                self.remains_label.configure(text=str(remaining))
+                self.found_label.configure(text=str(self.total_checked))
+                total_hits = sum(self.stats.values())
+                self.valid_label.configure(text=str(total_hits))
+        
+        except Exception as e:
+            with self.lock:
+                self.stats['errors'] += 1
+                self.errors_label.configure(text=str(self.stats['errors']))
+            self.log_output(f"❌ Error checking {os.path.basename(cookie_file)}: {str(e)}")
     
     def update_cpm(self):
         while not self.stop_flag.is_set():

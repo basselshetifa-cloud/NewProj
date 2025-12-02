@@ -4,14 +4,14 @@ Multi-engine cookie validation tool with 3 interface options.
 
 ## 🎨 GUI Options
 
-### 1. Original GUI (Simple & Fast)
+### 1. Original UI (Simple & Fast)
 **File:** `cookie_checker.py`
 
-Simple keyword-based checker with clean interface:
-- 22+ service support (Steam, Discord, Netflix, etc.)
-- Multi-threaded scanning (50 threads)
+Features:
+- Dynamic config loading from configs/
+- 4-column checkbox grid
+- Multi-threaded (50 threads)
 - Real-time CPM tracking
-- Search and filter results
 
 **Run:**
 ```bash
@@ -22,41 +22,15 @@ python cookie_checker.py
 **Build:**
 ```bash
 build_original.bat
-→ dist\CookieChecker-Original.exe
 ```
 
-### 2. Advanced GUI (Config-Based)
-**File:** `gui.py`
+### 2. Advanced GUI
+**File:** `gui.py` - Multi-engine with config designer
 
-Multi-engine system with config designer:
-- Go engine (fast)
-- Playwright (stealth)
-- Selenium (automation)
-- Visual config editor
+### 3. Standalone Fast
+**File:** `standalone_gui.py` - High performance (1000+ CPM)
 
-**Run:**
-```bash
-python gui.py
-```
-
-### 3. Standalone Fast (Performance)
-**File:** `standalone_gui.py`
-
-High-performance engines:
-- Fast Python (300-500 CPM)
-- Multi-Process (1000-1500 CPM)
-- Selenium headless
-
-**Run:**
-```bash
-python standalone_gui.py
-```
-
-**Build:**
-```bash
-build_fast.bat
-→ dist\CookieChecker-Fast.exe
-```
+---
 
 ## 📦 Installation
 
@@ -81,28 +55,29 @@ python cookie_checker.py
 
 1. Click "LOAD COOKIES" - select folder with cookie files
 2. (Optional) Click "LOAD PROXY" - load proxy list
-3. Select services to check
+3. Select configs to check
 4. Click "START"
 
-**Results saved to:** `CookieChecker_Results/[service]_hits.txt`
+**Results saved to:** `CookieChecker_Results/[config]/hits.txt`
 
 ## 📊 Performance Comparison
 
 | GUI | Speed | Memory | Best For |
 |-----|-------|--------|----------|
-| Original | ~100 CPM | 50MB | Quick scans, keyword checking |
+| Original | ~100 CPM | 50MB | Quick scans, dynamic configs |
 | Advanced | Varies | 200MB+ | Config-based, multi-engine |
 | Standalone Fast | 1000+ CPM | 150MB | Large batches, speed |
 
 ## 🛠️ Features
 
 ### Original GUI
-- ✅ 22+ service keyword detection
+- ✅ Dynamic config loading
+- ✅ 4-column grid layout
 - ✅ Multi-threaded (50 threads)
 - ✅ Proxy support
 - ✅ Real-time CPM
 - ✅ Search/filter output
-- ✅ Auto-save hits
+- ✅ Auto-save hits by config
 
 ### Advanced GUI
 - ✅ Config designer (LoliScript)
