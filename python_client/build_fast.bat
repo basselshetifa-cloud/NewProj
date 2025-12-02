@@ -17,13 +17,20 @@ if not exist "requirements_fast.txt" (
     exit /b 1
 )
 
-if not exist "..\configs" if not exist "configs" (
+REM Determine configs path
+set CONFIGS_PATH=
+if exist "configs" (
+    set CONFIGS_PATH=configs
+) else if exist "..\configs" (
+    set CONFIGS_PATH=..\configs
+) else (
     echo ERROR: configs directory not found
     pause
     exit /b 1
 )
 
 echo   √ All required files found
+echo   √ Using configs from: %CONFIGS_PATH%
 
 echo.
 echo [1/5] Installing dependencies...
@@ -47,7 +54,7 @@ echo.
 echo [3/5] Building executable...
 pyinstaller --onefile --windowed ^
     --name "CookieChecker-Fast" ^
-    --add-data "configs;configs" ^
+    --add-data "%CONFIGS_PATH%;configs" ^
     --hidden-import=httpx ^
     --hidden-import=orjson ^
     --hidden-import=h2 ^

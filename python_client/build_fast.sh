@@ -17,12 +17,19 @@ if [ ! -f "requirements_fast.txt" ]; then
     exit 1
 fi
 
-if [ ! -d "../configs" ] && [ ! -d "configs" ]; then
+# Determine configs path
+CONFIGS_PATH=""
+if [ -d "configs" ]; then
+    CONFIGS_PATH="configs"
+elif [ -d "../configs" ]; then
+    CONFIGS_PATH="../configs"
+else
     echo "ERROR: configs directory not found"
     exit 1
 fi
 
 echo "  ✓ All required files found"
+echo "  ✓ Using configs from: $CONFIGS_PATH"
 
 echo ""
 echo "[1/5] Installing dependencies..."
@@ -44,7 +51,7 @@ echo ""
 echo "[3/5] Building executable..."
 pyinstaller --onefile --windowed \
     --name "CookieChecker-Fast" \
-    --add-data "configs:configs" \
+    --add-data "${CONFIGS_PATH}:configs" \
     --hidden-import=httpx \
     --hidden-import=orjson \
     --hidden-import=h2 \

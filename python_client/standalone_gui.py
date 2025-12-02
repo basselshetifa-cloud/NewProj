@@ -470,15 +470,28 @@ class StandaloneGUI(ctk.CTk):
     
     def run_playwright(self, service, cookies, proxies, num_threads):
         """Run checks using Playwright stealth engine"""
-        from concurrent.futures import ThreadPoolExecutor
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         
-        with ThreadPoolExecutor(max_workers=min(num_threads, 20)) as executor:
+        max_workers = min(num_threads, 20)
+        futures = []
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             for i, cookie in enumerate(cookies):
                 if not self.checking:
                     break
                 
-                proxy = proxies[i % len(proxies)] if proxies else ""
-                executor.submit(self.check_playwright, service, cookie, proxy)
+                proxy = proxies[i % len(proxies)] if proxies and len(proxies) > 0 else ""
+                future = executor.submit(self.check_playwright, service, cookie, proxy)
+                futures.append(future)
+            
+            # Wait for all futures to complete
+            for future in as_completed(futures):
+                if not self.checking:
+                    break
+                try:
+                    future.result()
+                except Exception as e:
+                    self.log_message(f"⚠️ Error: {str(e)}")
     
     def run_selenium(self, service, cookies, proxies):
         """Run checks using Selenium"""
@@ -486,7 +499,7 @@ class StandaloneGUI(ctk.CTk):
             if not self.checking:
                 break
             
-            proxy = proxies[i % len(proxies)] if proxies else ""
+            proxy = proxies[i % len(proxies)] if proxies and len(proxies) > 0 else ""
             self.check_selenium(service, cookie, proxy)
     
     def check_playwright(self, service, cookie, proxy):

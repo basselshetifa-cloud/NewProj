@@ -97,8 +97,9 @@ class PerformanceChecker:
         if len(cookies_list) == 0:
             return []
         
-        # Split cookies into chunks (one per CPU core)
-        chunk_size = max(1, len(cookies_list) // self.num_processes)
+        # Split cookies into chunks (one per CPU core, up to num_processes)
+        num_chunks = min(self.num_processes, len(cookies_list))
+        chunk_size = max(1, len(cookies_list) // num_chunks)
         chunks = [
             cookies_list[i:i + chunk_size]
             for i in range(0, len(cookies_list), chunk_size)
@@ -111,7 +112,7 @@ class PerformanceChecker:
         ]
         
         # Process chunks in parallel
-        with mp.Pool(processes=self.num_processes) as pool:
+        with mp.Pool(processes=min(self.num_processes, len(chunks))) as pool:
             chunk_results = pool.map(self._process_chunk, process_args)
         
         # Flatten results
