@@ -1,0 +1,50 @@
+{
+  "name": "Steam",
+  "author": "YashvirGaming",
+  "version": "1.0",
+  "url": "https://store.steampowered.com/account/",
+  "method": "GET",
+  "cookie_format": "netscape",
+  "cookie_location": "header",
+  "blocks": [
+    {
+      "id": "1",
+      "type": "REQUEST",
+      "url": "https://store.steampowered.com/account/",
+      "method": "GET",
+      "headers": {
+        "Cookie": "<COOKIES_RAW>",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+      },
+      "save_response": "steam_page"
+    },
+    {
+      "id": "2",
+      "type": "PARSE",
+      "source": "steam_page",
+      "parse_type": "regex",
+      "captures": {
+        "username": "account_name">([^<]+)",
+        "steam_id": "steamid">(\d+)"
+      }
+    },
+    {
+      "id": "3",
+      "type": "KEY CHECK",
+      "conditions": [
+        {
+          "left": "<username>",
+          "condition": "EXISTS",
+          "right": ""
+        }
+      ],
+      "success": "HIT",
+      "failure": "BAD"
+    }
+  ],
+  "success_keywords": ["account_name", "steamid"],
+  "failure_keywords": ["login", "sign in"],
+  "needs_stealth": false,
+  "use_proxy": true,
+  "timeout": 15
+}
