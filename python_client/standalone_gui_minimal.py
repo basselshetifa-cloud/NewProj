@@ -1,10 +1,7 @@
 """
-Standalone GUI with High-Performance Engine Options
-Supports 4 engines:
-1. 🚀 Multi-Process (~1000 CPM) - Maximum speed
-2. ⚡ Fast Python (~300 CPM) - Balanced performance
-3. 🕵️ Playwright (~80 CPM) - Stealth mode
-4. 🌐 Selenium (~40 CPM) - Full browser automation
+Minimal Standalone Cookie Checker - No Playwright Stealth
+Uses only Fast Engine + Multi-Process + Selenium (no stealth dependencies)
+This avoids the playwright-stealth JavaScript file issues with PyInstaller
 """
 
 import customtkinter as ctk
@@ -14,6 +11,7 @@ import time
 import os
 import json
 import asyncio
+import multiprocessing as mp
 import warnings
 
 # Import engines
@@ -22,19 +20,14 @@ try:
     FAST_ENGINE_AVAILABLE = True
 except ImportError:
     FAST_ENGINE_AVAILABLE = False
+    warnings.warn("FastEngine not available", ImportWarning)
 
 try:
     from performance_checker import PerformanceChecker
     PERF_CHECKER_AVAILABLE = True
 except ImportError:
     PERF_CHECKER_AVAILABLE = False
-
-try:
-    from stealth_checker import StealthChecker
-    STEALTH_AVAILABLE = True
-except ImportError:
-    STEALTH_AVAILABLE = False
-    warnings.warn("Playwright-stealth not available - Playwright engine disabled", ImportWarning)
+    warnings.warn("PerformanceChecker not available", ImportWarning)
 
 try:
     from selenium_checker import SeleniumChecker
@@ -54,14 +47,15 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 
-class StandaloneGUI(ctk.CTk):
+class MinimalCookieChecker(ctk.CTk):
+    """Minimal version without playwright-stealth dependency"""
+    
     def __init__(self):
         super().__init__()
         
-        self.title("🔥 Cookie Checker - High Performance Edition")
+        self.title("🔥 Cookie Checker - Minimal Edition (No Playwright)")
         self.geometry("1100x750")
         
-        self.stealth_checker = StealthChecker() if STEALTH_AVAILABLE else None
         self.selenium_checker = None
         self.checking = False
         self.threads = []
@@ -84,10 +78,10 @@ class StandaloneGUI(ctk.CTk):
         header.pack(fill="x", padx=10, pady=10)
         header.pack_propagate(False)
         
-        ctk.CTkLabel(header, text="🔥 Cookie Checker - High Performance", 
+        ctk.CTkLabel(header, text="🔥 Cookie Checker - Minimal Edition", 
                     font=("Arial", 24, "bold")).pack(side="left", padx=20)
         
-        ctk.CTkLabel(header, text="Standalone Edition", 
+        ctk.CTkLabel(header, text="Fast + MultiProcess + Selenium", 
                     font=("Arial", 12), text_color="gray").pack(side="left")
         
         if EDITOR_AVAILABLE:
@@ -175,24 +169,6 @@ class StandaloneGUI(ctk.CTk):
                 text="(~300 CPM)",
                 font=("Arial", 9),
                 text_color="#2ecc71"
-            ).pack(side="left", padx=5)
-        
-        # Playwright option
-        if STEALTH_AVAILABLE:
-            engine_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
-            engine_frame.pack(padx=10, fill="x")
-            ctk.CTkRadioButton(
-                engine_frame,
-                text="🕵️ Playwright",
-                variable=self.engine_var,
-                value="playwright",
-                command=self.on_engine_change
-            ).pack(side="left")
-            ctk.CTkLabel(
-                engine_frame,
-                text="(~80 CPM)",
-                font=("Arial", 9),
-                text_color="#9b59b6"
             ).pack(side="left", padx=5)
         
         # Selenium option
@@ -312,9 +288,6 @@ class StandaloneGUI(ctk.CTk):
         elif engine == "fast":
             self.selenium_options_frame.pack_forget()
             self.engine_status_label.configure(text="🔧 Engine: Fast Python (Balanced)")
-        elif engine == "playwright":
-            self.selenium_options_frame.pack_forget()
-            self.engine_status_label.configure(text="🔧 Engine: Playwright (Stealth)")
         elif engine == "selenium":
             self.selenium_options_frame.pack(padx=10, pady=5)
             self.engine_status_label.configure(text="🔧 Engine: Selenium (Full Browser)")
@@ -408,8 +381,6 @@ class StandaloneGUI(ctk.CTk):
             self.run_multiprocess(config, cookies, proxies)
         elif engine == "fast" and FAST_ENGINE_AVAILABLE:
             self.run_fast_python(config, cookies, proxies, num_threads)
-        elif engine == "playwright" and STEALTH_AVAILABLE:
-            self.run_playwright(service, cookies, proxies, num_threads)
         elif engine == "selenium" and SELENIUM_AVAILABLE:
             self.run_selenium(service, cookies, proxies)
         else:
@@ -471,31 +442,6 @@ class StandaloneGUI(ctk.CTk):
         except Exception as e:
             self.log_message(f"⚠️ Fast Python error: {e}")
     
-    def run_playwright(self, service, cookies, proxies, num_threads):
-        """Run checks using Playwright stealth engine"""
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        
-        max_workers = min(num_threads, 20)
-        futures = []
-        
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for i, cookie in enumerate(cookies):
-                if not self.checking:
-                    break
-                
-                proxy = proxies[i % len(proxies)] if proxies and len(proxies) > 0 else ""
-                future = executor.submit(self.check_playwright, service, cookie, proxy)
-                futures.append(future)
-            
-            # Wait for all futures to complete
-            for future in as_completed(futures):
-                if not self.checking:
-                    break
-                try:
-                    future.result()
-                except Exception as e:
-                    self.log_message(f"⚠️ Error: {str(e)}")
-    
     def run_selenium(self, service, cookies, proxies):
         """Run checks using Selenium"""
         for i, cookie in enumerate(cookies):
@@ -504,16 +450,6 @@ class StandaloneGUI(ctk.CTk):
             
             proxy = proxies[i % len(proxies)] if proxies and len(proxies) > 0 else ""
             self.check_selenium(service, cookie, proxy)
-    
-    def check_playwright(self, service, cookie, proxy):
-        """Check single cookie with Playwright"""
-        try:
-            response = self.stealth_checker.check(service, "", cookie, proxy)
-            self.process_result(cookie, self.response_to_dict(response))
-        except Exception as e:
-            self.stats['errors'] += 1
-            self.log_message(f"⚠️ Error: {str(e)}")
-            self.update_stats()
     
     def check_selenium(self, service, cookie, proxy):
         """Check single cookie with Selenium"""
@@ -583,8 +519,7 @@ class StandaloneGUI(ctk.CTk):
 
 
 if __name__ == "__main__":
-    import multiprocessing as mp
     mp.freeze_support()  # Required for Windows multiprocessing
     
-    app = StandaloneGUI()
+    app = MinimalCookieChecker()
     app.mainloop()

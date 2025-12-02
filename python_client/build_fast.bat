@@ -52,18 +52,49 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [3/5] Building executable...
-pyinstaller --onefile --windowed ^
-    --name "CookieChecker-Fast" ^
-    --add-data "%CONFIGS_PATH%;configs" ^
-    --hidden-import=httpx ^
-    --hidden-import=orjson ^
-    --hidden-import=h2 ^
-    --hidden-import=httpx._transports.default ^
-    --hidden-import=httpx._transports.asgi ^
-    --hidden-import=httpcore ^
-    --collect-all customtkinter ^
-    --optimize=2 ^
-    standalone_gui.py
+
+REM Find playwright-stealth installation path
+set STEALTH_PATH=
+for /f "delims=" %%i in ('python -c "try: import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))\nexcept ImportError: pass"') do set STEALTH_PATH=%%i
+
+if defined STEALTH_PATH (
+    echo   √ Found playwright-stealth at: %STEALTH_PATH%
+    pyinstaller --onefile --windowed ^
+        --name "CookieChecker-Fast" ^
+        --add-data "%CONFIGS_PATH%;configs" ^
+        --add-data "%STEALTH_PATH%;playwright_stealth" ^
+        --hidden-import=httpx ^
+        --hidden-import=orjson ^
+        --hidden-import=h2 ^
+        --hidden-import=httpx._transports.default ^
+        --hidden-import=httpx._transports.asgi ^
+        --hidden-import=httpcore ^
+        --hidden-import=playwright ^
+        --hidden-import=playwright_stealth ^
+        --hidden-import=selenium ^
+        --hidden-import=undetected_chromedriver ^
+        --collect-all customtkinter ^
+        --collect-all playwright_stealth ^
+        --collect-all playwright ^
+        --optimize=2 ^
+        standalone_gui.py
+) else (
+    echo   ! Playwright-stealth not found - building without it
+    pyinstaller --onefile --windowed ^
+        --name "CookieChecker-Fast" ^
+        --add-data "%CONFIGS_PATH%;configs" ^
+        --hidden-import=httpx ^
+        --hidden-import=orjson ^
+        --hidden-import=h2 ^
+        --hidden-import=httpx._transports.default ^
+        --hidden-import=httpx._transports.asgi ^
+        --hidden-import=httpcore ^
+        --hidden-import=selenium ^
+        --hidden-import=undetected_chromedriver ^
+        --collect-all customtkinter ^
+        --optimize=2 ^
+        standalone_gui.py
+)
 
 if %errorlevel% neq 0 (
     echo ERROR: Build failed

@@ -1,13 +1,30 @@
-from playwright.sync_api import sync_playwright
+"""
+Stealth Checker with Playwright
+Optional: Falls back gracefully if playwright-stealth not available
+"""
+import warnings
+
+try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    warnings.warn("Playwright not available - install with: pip install playwright playwright-stealth", ImportWarning)
+
 try:
     from playwright_stealth import stealth_sync
+    STEALTH_AVAILABLE = True
 except ImportError:
     stealth_sync = None
+    STEALTH_AVAILABLE = False
+
 import json
 import time
 
 class StealthChecker:
     def __init__(self):
+        if not PLAYWRIGHT_AVAILABLE:
+            raise ImportError("Playwright not installed. Install with: pip install playwright playwright-stealth")
         self.playwright = None
         self.browser = None
     
