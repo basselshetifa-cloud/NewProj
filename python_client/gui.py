@@ -5,6 +5,7 @@ import time
 import os
 from grpc_client import GRPCClient
 from stealth_checker import StealthChecker
+from selenium_checker import SeleniumChecker
 from openbullet_editor import OpenBulletEditor
 
 ctk.set_appearance_mode("dark")
@@ -19,6 +20,7 @@ class CookieCheckerGUI(ctk.CTk):
         
         self.grpc_client = None
         self.stealth_checker = StealthChecker()
+        self.selenium_checker = None
         self.checking = False
         self.threads = []
         
@@ -94,8 +96,34 @@ class CookieCheckerGUI(ctk.CTk):
         
         # Stealth mode
         self.stealth_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(left_panel, text="🕵️ Use Stealth Mode (Slower)", 
-                       variable=self.stealth_var).pack(padx=10, pady=10)
+        ctk.CTkCheckBox(left_panel, text="🕵️ Use Stealth Mode (Playwright)", 
+                       variable=self.stealth_var, command=self.on_stealth_toggle).pack(padx=10, pady=(10,0))
+        
+        # Selenium mode
+        self.selenium_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(left_panel, text="🌐 Use Selenium (Chrome)", 
+                       variable=self.selenium_var, command=self.on_selenium_toggle).pack(padx=10, pady=(5,0))
+        
+        # Selenium options (initially hidden)
+        self.selenium_options_frame = ctk.CTkFrame(left_panel, fg_color="transparent")
+        
+        ctk.CTkLabel(self.selenium_options_frame, text="  Browser Mode:", 
+                    font=("Arial", 10)).pack(anchor="w", padx=10)
+        self.browser_mode_combo = ctk.CTkComboBox(self.selenium_options_frame, 
+                                                  values=["Headless", "Headed"], 
+                                                  width=240)
+        self.browser_mode_combo.set("Headless")
+        self.browser_mode_combo.pack(padx=20, pady=2)
+        
+        self.undetected_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(self.selenium_options_frame, text="  Undetected ChromeDriver", 
+                       variable=self.undetected_var, font=("Arial", 10)).pack(padx=20, pady=2, anchor="w")
+        
+        # Engine status indicator
+        self.engine_status_label = ctk.CTkLabel(left_panel, text="🔧 Engine: Go", 
+                                               font=("Arial", 10), text_color="gray")
+        self.engine_status_label.pack(padx=10, pady=(5,0))
+
         
         # Start button
         self.start_btn = ctk.CTkButton(left_panel, text="▶️ START CHECKING", 
@@ -169,6 +197,26 @@ class CookieCheckerGUI(ctk.CTk):
         editor = OpenBulletEditor(self)
         editor.focus()
     
+    def on_stealth_toggle(self):
+        """Handle stealth mode toggle"""
+        if self.stealth_var.get():
+            self.selenium_var.set(False)
+            self.selenium_options_frame.pack_forget()
+            self.engine_status_label.configure(text="🔧 Engine: Playwright (Stealth)")
+        else:
+            self.engine_status_label.configure(text="🔧 Engine: Go")
+    
+    def on_selenium_toggle(self):
+        """Handle Selenium mode toggle"""
+        if self.selenium_var.get():
+            self.stealth_var.set(False)
+            self.selenium_options_frame.pack(padx=10, pady=5)
+            self.engine_status_label.configure(text="🔧 Engine: Selenium (Chrome)")
+        else:
+            self.selenium_options_frame.pack_forget()
+            self.engine_status_label.configure(text="🔧 Engine: Go")
+
+    
     def browse_cookie_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
         if file_path:
@@ -221,6 +269,13 @@ class CookieCheckerGUI(ctk.CTk):
         service = self.service_combo.get()
         num_threads = int(self.threads_slider.get())
         use_stealth = self.stealth_var.get()
+        use_selenium = self.selenium_var.get()
+        
+        # Initialize Selenium checker if needed
+        if use_selenium and not self.selenium_checker:
+            headless = self.browser_mode_combo.get() == "Headless"
+            use_undetected = self.undetected_var.get()
+            self.selenium_checker = SeleniumChecker(use_undetected=use_undetected, headless=headless)
         
         with open(cookie_file, 'r') as f:
             cookies = [line.strip() for line in f if line.strip()]
@@ -234,20 +289,30 @@ class CookieCheckerGUI(ctk.CTk):
         
         from concurrent.futures import ThreadPoolExecutor
         
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Reduce threads for Selenium (it's more resource-intensive)
+        max_workers = 1 if use_selenium else num_threads
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             for i, cookie in enumerate(cookies):
                 if not self.checking:
                     break
                 
                 proxy = proxies[i % len(proxies)] if proxies else ""
-                executor.submit(self.check_cookie, service, cookie, proxy, use_stealth)
+                executor.submit(self.check_cookie, service, cookie, proxy, use_stealth, use_selenium)
+        
+        # Cleanup Selenium
+        if use_selenium and self.selenium_checker:
+            self.selenium_checker.close()
+            self.selenium_checker = None
         
         self.stop_checking()
         messagebox.showinfo("Complete", f"Checking complete!\n\nHits: {self.stats['hits']}\nBad: {self.stats['bad']}")
     
-    def check_cookie(self, service, cookie, proxy, use_stealth):
+    def check_cookie(self, service, cookie, proxy, use_stealth, use_selenium):
         try:
-            if use_stealth or not self.grpc_client:
+            if use_selenium:
+                response = self.selenium_checker.check(service, "", cookie, proxy)
+            elif use_stealth or not self.grpc_client:
                 response = self.stealth_checker.check(service, "", cookie, proxy)
             else:
                 response = self.grpc_client.check_cookie(service, "", cookie, proxy, use_stealth)

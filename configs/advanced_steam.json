@@ -1,0 +1,63 @@
+{
+  "name": "Advanced Steam",
+  "author": "YashvirGaming",
+  "version": "2.0",
+  "url": "https://store.steampowered.com/account/",
+  "method": "GET",
+  "cookie_format": "netscape",
+  "blocks": [
+    {
+      "type": "REQUEST",
+      "url": "https://store.steampowered.com/account/",
+      "method": "GET",
+      "headers": {
+        "Cookie": "<COOKIES_RAW>",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      "save_response": "account_page"
+    },
+    {
+      "type": "PARSE",
+      "source": "account_page",
+      "parse_type": "LR",
+      "left": "account_name\">",
+      "right": "</",
+      "capture_name": "username",
+      "recursive": false
+    },
+    {
+      "type": "PARSE",
+      "source": "account_page",
+      "parse_type": "Regex",
+      "pattern": "steamid\">(\\d+)</",
+      "capture_name": "steam_id"
+    },
+    {
+      "type": "FUNCTION",
+      "function": "Length",
+      "input": "<username>",
+      "save_as": "username_length"
+    },
+    {
+      "type": "KEYCHECK",
+      "conditions": [
+        {
+          "left": "<username>",
+          "comparer": "Exists",
+          "right": ""
+        },
+        {
+          "left": "<username_length>",
+          "comparer": "GreaterThan",
+          "right": "0"
+        }
+      ],
+      "logic": "AND",
+      "success": "HIT",
+      "failure": "BAD"
+    }
+  ],
+  "needs_stealth": false,
+  "use_selenium": false,
+  "timeout": 15
+}

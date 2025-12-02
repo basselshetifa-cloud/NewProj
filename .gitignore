@@ -32,6 +32,10 @@ build/
 YashvirGaming_PremiumChecker_Results/
 Results/
 *.txt
+screenshots/
+*.png
+*.jpg
+*.jpeg
 
 # OS
 .DS_Store

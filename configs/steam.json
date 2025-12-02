@@ -24,8 +24,8 @@
       "source": "steam_page",
       "parse_type": "regex",
       "captures": {
-        "username": "account_name">([^<]+)",
-        "steam_id": "steamid">(\d+)"
+        "username": "account_name\">([^<]+)",
+        "steam_id": "steamid\">(\\d+)"
       }
     },
     {

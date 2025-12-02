@@ -1,0 +1,59 @@
+{
+  "name": "Cloudflare Bypass Example",
+  "author": "YashvirGaming",
+  "version": "1.0",
+  "url": "https://example-with-cf.com/",
+  "method": "GET",
+  "cookie_format": "json",
+  "use_selenium": true,
+  "browser_mode": "headless",
+  "blocks": [
+    {
+      "type": "BYPASS_CF",
+      "url": "https://example-with-cf.com/",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "timeout": "30",
+      "save_cookies": true
+    },
+    {
+      "type": "NAVIGATE",
+      "action": "NavigateTo",
+      "url": "https://example-with-cf.com/account",
+      "timeout": "10"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Wait",
+      "selector": "#account-name",
+      "by": "CSS",
+      "timeout": "10"
+    },
+    {
+      "type": "ELEMENT_ACTION",
+      "selector": "#account-name",
+      "by": "CSS",
+      "action": "GetText",
+      "save_as": "username"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Screenshot",
+      "value": "cf_bypass_success.png"
+    },
+    {
+      "type": "KEYCHECK",
+      "conditions": [
+        {
+          "left": "<username>",
+          "comparer": "Exists",
+          "right": ""
+        }
+      ],
+      "logic": "AND",
+      "success": "HIT",
+      "failure": "BAD"
+    }
+  ],
+  "needs_stealth": false,
+  "timeout": 30
+}

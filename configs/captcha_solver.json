@@ -1,0 +1,84 @@
+{
+  "name": "CAPTCHA Solver Example",
+  "author": "YashvirGaming",
+  "version": "1.0",
+  "url": "https://example-with-captcha.com/login",
+  "method": "POST",
+  "cookie_format": "json",
+  "use_selenium": true,
+  "browser_mode": "headed",
+  "blocks": [
+    {
+      "type": "NAVIGATE",
+      "action": "NavigateTo",
+      "url": "https://example-with-captcha.com/login",
+      "timeout": "10"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Type",
+      "selector": "#username",
+      "by": "CSS",
+      "value": "test@example.com",
+      "timeout": "5"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Type",
+      "selector": "#password",
+      "by": "CSS",
+      "value": "password123",
+      "timeout": "5"
+    },
+    {
+      "type": "CAPTCHA",
+      "service": "2Captcha",
+      "api_key": "YOUR_API_KEY_HERE",
+      "site_key": "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-",
+      "page_url": "https://example-with-captcha.com/login",
+      "captcha_type": "reCAPTCHA v2",
+      "save_as": "captcha_token"
+    },
+    {
+      "type": "EXECUTE_JS",
+      "script": "document.getElementById('g-recaptcha-response').value = arguments[0];",
+      "save_as": "js_result"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Click",
+      "selector": "#login-button",
+      "by": "CSS",
+      "timeout": "5"
+    },
+    {
+      "type": "BROWSER_ACTION",
+      "action": "Wait",
+      "selector": ".dashboard",
+      "by": "CSS",
+      "timeout": "10"
+    },
+    {
+      "type": "ELEMENT_ACTION",
+      "selector": ".user-info",
+      "by": "CSS",
+      "action": "GetText",
+      "save_as": "user_info"
+    },
+    {
+      "type": "KEYCHECK",
+      "conditions": [
+        {
+          "left": "<user_info>",
+          "comparer": "Contains",
+          "right": "Welcome"
+        }
+      ],
+      "logic": "AND",
+      "success": "HIT",
+      "failure": "BAD"
+    }
+  ],
+  "needs_stealth": true,
+  "timeout": 60
+}
