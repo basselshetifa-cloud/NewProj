@@ -49,18 +49,52 @@ fi
 
 echo ""
 echo "[3/5] Building executable..."
-pyinstaller --onefile --windowed \
-    --name "CookieChecker-Fast" \
-    --add-data "${CONFIGS_PATH}:configs" \
-    --hidden-import=httpx \
-    --hidden-import=orjson \
-    --hidden-import=h2 \
-    --hidden-import=httpx._transports.default \
-    --hidden-import=httpx._transports.asgi \
-    --hidden-import=httpcore \
-    --collect-all customtkinter \
-    --optimize=2 \
-    standalone_gui.py
+
+# Find playwright-stealth installation path
+STEALTH_PATH=$(python3 -c "try:
+    import playwright_stealth, os
+    print(os.path.dirname(playwright_stealth.__file__))
+except:
+    pass" 2>/dev/null)
+
+if [ -n "$STEALTH_PATH" ]; then
+    echo "  ✓ Found playwright-stealth at: $STEALTH_PATH"
+    pyinstaller --onefile --windowed \
+        --name "CookieChecker-Fast" \
+        --add-data "${CONFIGS_PATH}:configs" \
+        --add-data "${STEALTH_PATH}:playwright_stealth" \
+        --hidden-import=httpx \
+        --hidden-import=orjson \
+        --hidden-import=h2 \
+        --hidden-import=httpx._transports.default \
+        --hidden-import=httpx._transports.asgi \
+        --hidden-import=httpcore \
+        --hidden-import=playwright \
+        --hidden-import=playwright_stealth \
+        --hidden-import=selenium \
+        --hidden-import=undetected_chromedriver \
+        --collect-all customtkinter \
+        --collect-all playwright_stealth \
+        --collect-all playwright \
+        --optimize=2 \
+        standalone_gui.py
+else
+    echo "  ! Playwright-stealth not found - building without it"
+    pyinstaller --onefile --windowed \
+        --name "CookieChecker-Fast" \
+        --add-data "${CONFIGS_PATH}:configs" \
+        --hidden-import=httpx \
+        --hidden-import=orjson \
+        --hidden-import=h2 \
+        --hidden-import=httpx._transports.default \
+        --hidden-import=httpx._transports.asgi \
+        --hidden-import=httpcore \
+        --hidden-import=selenium \
+        --hidden-import=undetected_chromedriver \
+        --collect-all customtkinter \
+        --optimize=2 \
+        standalone_gui.py
+fi
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Build failed"
