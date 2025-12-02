@@ -274,5 +274,3 @@ func EvaluateKeyCheck(block Block, captures map[string]string) string {
     // For OR logic, no conditions passed
     return block.Failure
 }
-    return block.Success
-}
