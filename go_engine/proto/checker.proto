@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package checker;
+option go_package = "./proto";
+
+service CookieChecker {
+  rpc CheckCookie (CookieRequest) returns (CookieResponse);
+  rpc CheckBatch (BatchRequest) returns (stream CookieResponse);
+}
+
+message CookieRequest {
+  string service = 1;
+  string file_path = 2;
+  string cookies = 3;
+  string proxy = 4;
+  bool use_stealth = 5;
+  map<string, string> config = 6;
+}
+
+message CookieResponse {
+  string service = 1;
+  string file_path = 2;
+  bool valid = 3;
+  int32 status_code = 4;
+  string message = 5;
+  double check_time = 6;
+  string extracted_data = 7;
+}
+
+message BatchRequest {
+  repeated CookieRequest requests = 1;
+}
