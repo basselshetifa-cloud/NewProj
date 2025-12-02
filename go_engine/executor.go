@@ -74,10 +74,36 @@ func ExecuteConfig(config *ServiceConfig, cookieContent string, proxyURL string)
             
         case "PARSE":
             source := responses[block.Source]
-            parsed := ParseResponse(source, block.ParseType, block.Captures)
+            var parsed map[string]string
+            
+            if block.ParseType == "LR" {
+                // Left-Right parsing
+                if block.Recursive {
+                    results := ParseLRRecursive(source, block.Left, block.Right, block.CaseSensitive)
+                    if len(results) > 0 {
+                        parsed = map[string]string{block.CaptureName: results[0]}
+                    }
+                } else {
+                    result, err := ParseLR(source, block.Left, block.Right, block.CaseSensitive)
+                    if err == nil {
+                        parsed = map[string]string{block.CaptureName: result}
+                    }
+                }
+            } else {
+                // Existing parsing methods
+                parsed = ParseResponse(source, block.ParseType, block.Captures)
+            }
             
             for k, v := range parsed {
                 captures[k] = v
+            }
+            
+        case "FUNCTION":
+            // Execute function block
+            input := ReplaceVariables(block.Input, nil, captures)
+            result, err := ExecuteFunction(block.Function, input, block.Param1, block.Param2)
+            if err == nil && block.SaveAs != "" {
+                captures[block.SaveAs] = result
             }
             
         case "KEYCHECK", "KEY CHECK":

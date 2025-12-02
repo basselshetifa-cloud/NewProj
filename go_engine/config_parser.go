@@ -5,6 +5,7 @@ import (
     "fmt"
     "io/ioutil"
     "regexp"
+    "strconv"
     "strings"
 )
 
@@ -22,11 +23,33 @@ type Block struct {
     Conditions   []Condition       `json:"conditions,omitempty"`
     Success      string            `json:"success,omitempty"`
     Failure      string            `json:"failure,omitempty"`
+    
+    // PARSE block fields
+    Left            string `json:"left,omitempty"`
+    Right           string `json:"right,omitempty"`
+    Selector        string `json:"selector,omitempty"`
+    JSONPath        string `json:"json_path,omitempty"`
+    Pattern         string `json:"pattern,omitempty"`
+    CaptureName     string `json:"capture_name,omitempty"`
+    Recursive       bool   `json:"recursive,omitempty"`
+    CaseSensitive   bool   `json:"case_sensitive,omitempty"`
+    
+    // FUNCTION block fields
+    Function string `json:"function,omitempty"`
+    Input    string `json:"input,omitempty"`
+    Param1   string `json:"param1,omitempty"`
+    Param2   string `json:"param2,omitempty"`
+    SaveAs   string `json:"save_as,omitempty"`
+    
+    // KEYCHECK block fields
+    Logic    string `json:"logic,omitempty"`
+    Comparer string `json:"comparer,omitempty"`
 }
 
 type Condition struct {
     Left      string `json:"left"`
     Condition string `json:"condition"`
+    Comparer  string `json:"comparer"`
     Right     string `json:"right"`
 }
 
@@ -43,6 +66,8 @@ type ServiceConfig struct {
     FailureKeywords []string          `json:"failure_keywords"`
     RetryKeywords   []string          `json:"retry_keywords"`
     NeedsStealth    bool              `json:"needs_stealth"`
+    UseSelenium     bool              `json:"use_selenium"`
+    BrowserMode     string            `json:"browser_mode"`
     UseProxy        bool              `json:"use_proxy"`
     Timeout         int               `json:"timeout"`
 }
@@ -172,27 +197,82 @@ func GetJSONPath(data map[string]interface{}, path string) interface{} {
 }
 
 func EvaluateKeyCheck(block Block, captures map[string]string) string {
+    logic := block.Logic
+    if logic == "" {
+        logic = "AND"
+    }
+    
+    passCount := 0
+    
     for _, cond := range block.Conditions {
         left := ReplaceVariables(cond.Left, nil, captures)
-        right := cond.Right
+        right := ReplaceVariables(cond.Right, nil, captures)
+        
+        // Support both old "Condition" field and new "Comparer" field
+        comparer := cond.Comparer
+        if comparer == "" {
+            comparer = cond.Condition
+        }
         
         passed := false
-        switch cond.Condition {
-        case "EXISTS":
+        switch comparer {
+        case "Exists", "EXISTS":
             passed = left != "" && left != "<nil>"
-        case "CONTAINS":
-            passed = strings.Contains(left, right)
-        case "NOT_CONTAINS":
-            passed = !strings.Contains(left, right)
-        case "EQUALS":
+        case "DoesNotExist", "NOT_EXISTS":
+            passed = left == "" || left == "<nil>"
+        case "EqualTo", "EQUALS":
             passed = left == right
+        case "NotEqualTo", "NOT_EQUALS":
+            passed = left != right
+        case "Contains", "CONTAINS":
+            passed = strings.Contains(left, right)
+        case "NotContains", "NOT_CONTAINS":
+            passed = !strings.Contains(left, right)
+        case "StartsWith", "STARTS_WITH":
+            passed = strings.HasPrefix(left, right)
+        case "EndsWith", "ENDS_WITH":
+            passed = strings.HasSuffix(left, right)
+        case "GreaterThan", "GREATER_THAN":
+            leftInt, err1 := strconv.Atoi(left)
+            rightInt, err2 := strconv.Atoi(right)
+            if err1 == nil && err2 == nil {
+                passed = leftInt > rightInt
+            }
+        case "LessThan", "LESS_THAN":
+            leftInt, err1 := strconv.Atoi(left)
+            rightInt, err2 := strconv.Atoi(right)
+            if err1 == nil && err2 == nil {
+                passed = leftInt < rightInt
+            }
+        case "MatchesRegex", "REGEX":
+            re := regexp.MustCompile(right)
+            passed = re.MatchString(left)
         case "LENGTH":
             passed = len(left) >= len(right)
         }
         
-        if !passed {
+        if passed {
+            passCount++
+        }
+        
+        // For AND logic, if any condition fails, return failure
+        if logic == "AND" && !passed {
             return block.Failure
         }
+        
+        // For OR logic, if any condition passes, return success
+        if logic == "OR" && passed {
+            return block.Success
+        }
     }
+    
+    // For AND logic, all conditions passed
+    if logic == "AND" && passCount == len(block.Conditions) {
+        return block.Success
+    }
+    
+    // For OR logic, no conditions passed
+    return block.Failure
+}
     return block.Success
 }
