@@ -1,0 +1,29 @@
+# High-Performance Cookie Checker - Optimized Dependencies
+
+# GUI Framework
+customtkinter>=5.2.0
+
+# High-Performance HTTP Client
+httpx[http2]>=0.25.0
+h2>=4.1.0
+
+# Fast JSON Parser (3x faster than stdlib)
+orjson>=3.9.0
+
+# Async File I/O
+aiofiles>=23.0.0
+
+# Optional Engines (Stealth & Browser Automation)
+# Comment out if not needed to reduce build size
+
+# Playwright - Stealth Mode (~80 CPM)
+playwright>=1.40.0
+playwright-stealth>=1.0.0
+
+# Selenium - Full Browser (~40 CPM)
+selenium>=4.15.0
+undetected-chromedriver>=3.5.4
+webdriver-manager>=4.0.1
+
+# Image Processing (for screenshots)
+Pillow>=10.0.0

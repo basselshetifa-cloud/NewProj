@@ -32,6 +32,8 @@ build/
 YashvirGaming_PremiumChecker_Results/
 Results/
 *.txt
+!requirements*.txt
+!**/requirements*.txt
 screenshots/
 *.png
 *.jpg

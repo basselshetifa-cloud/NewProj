@@ -48,10 +48,57 @@ A high-performance cookie checker combining **Go** (speed), **Python Playwright*
 2. **Playwright Engine** (Stealth) - Anti-detection, JavaScript rendering
 3. **Selenium Engine** (Most Powerful) - Full automation, CAPTCHA solving, CF bypass
 
+## ⚡ Performance Modes
+
+The standalone version includes **4 high-performance engine options**:
+
+1. **🚀 Multi-Process** - Maximum speed (1000-1500 CPM)
+   - Uses all CPU cores with multiprocessing
+   - Best for large batches (1000+ cookies)
+   - Memory: ~200MB
+
+2. **⚡ Fast Python** - Balanced performance (300-500 CPM)
+   - Async HTTP with httpx + HTTP/2
+   - Connection pooling & fast JSON (orjson)
+   - Best for medium batches (100-1000 cookies)
+   - Memory: ~80MB
+
+3. **🕵️ Playwright** - Stealth mode (80-100 CPM)
+   - Anti-bot detection
+   - JavaScript rendering
+   - Best for sites with protection
+   - Memory: ~500MB
+
+4. **🌐 Selenium** - Full browser automation (40-60 CPM)
+   - Complete Chrome automation
+   - CAPTCHA solving & Cloudflare bypass
+   - Best for complex automation
+   - Memory: ~800MB
+
+### Building Standalone Version
+
+**No Go server required!** Build a single executable:
+
+```cmd
+# Windows
+cd python_client
+build_fast.bat
+
+# Linux/Mac
+cd python_client
+./build_fast.sh
+```
+
+**Output:** `dist/CookieChecker-Fast.exe` (or `CookieChecker-Fast` on Linux/Mac)
+
+For detailed performance comparison, see [PERFORMANCE.md](python_client/PERFORMANCE.md)
+
+---
+
 ## 📦 Installation
 
 ### Prerequisites
-- **Go** 1.21+ ([Download](https://go.dev/dl/))
+- **Go** 1.21+ ([Download](https://go.dev/dl/)) - Optional for Go engine
 - **Python** 3.10+ ([Download](https://www.python.org/downloads/))
 - **ChromeDriver** (for Selenium) - See [Setup Selenium](#-selenium-setup) below
 
