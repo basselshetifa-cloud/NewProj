@@ -6,7 +6,7 @@ import os
 from grpc_client import GRPCClient
 from stealth_checker import StealthChecker
 from selenium_checker import SeleniumChecker
-from openbullet_editor import OpenBulletEditor
+from config_designer import ConfigDesigner
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -49,8 +49,8 @@ class CookieCheckerGUI(ctk.CTk):
         ctk.CTkLabel(header, text="Go Backend + Python Stealth", 
                     font=("Arial", 12), text_color="gray").pack(side="left")
         
-        config_btn = ctk.CTkButton(header, text="⚙️ CONFIG EDITOR", 
-                                  command=self.open_config_editor,
+        config_btn = ctk.CTkButton(header, text="⚙️ CONFIG DESIGNER", 
+                                  command=self.open_config_designer,
                                   width=150, height=40,
                                   fg_color="#2ecc71", hover_color="#27ae60")
         config_btn.pack(side="right", padx=20)
@@ -193,8 +193,8 @@ class CookieCheckerGUI(ctk.CTk):
             self.log_message(f"⚠️ gRPC connection failed: {e}")
             messagebox.showwarning("Warning", "Go server not running. Only stealth mode will work.")
     
-    def open_config_editor(self):
-        editor = OpenBulletEditor(self)
+    def open_config_designer(self):
+        editor = ConfigDesigner(self)
         editor.focus()
     
     def on_stealth_toggle(self):
