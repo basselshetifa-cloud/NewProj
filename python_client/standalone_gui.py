@@ -44,7 +44,7 @@ except ImportError:
     warnings.warn("Selenium not available - Selenium engine disabled", ImportWarning)
 
 try:
-    from openbullet_editor import OpenBulletEditor
+    from config_designer import ConfigDesigner
     EDITOR_AVAILABLE = True
 except ImportError:
     EDITOR_AVAILABLE = False
@@ -299,7 +299,7 @@ class StandaloneGUI(ctk.CTk):
     
     def open_config_editor(self):
         if EDITOR_AVAILABLE:
-            editor = OpenBulletEditor(self)
+            editor = ConfigDesigner(self)
             editor.focus()
     
     def on_engine_change(self):

@@ -50,7 +50,7 @@ class SeleniumChecker:
         
         Args:
             use_undetected (bool): Use undetected_chromedriver for stealth
-            headless (bool): Run browser in headless mode
+            headless (bool): Run browser in headless mode (default: True - CHANGED)
             chromedriver_path (str): Path to chromedriver executable (optional)
         """
         self.driver = None
