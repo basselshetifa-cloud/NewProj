@@ -211,12 +211,13 @@ KEYCHECK
                     ).pack(pady=2)
             else:
                 ctk.CTkLabel(self.config_list, text="No configs", text_color="gray").pack(pady=20)
-        except:
-            pass
+        except (OSError, FileNotFoundError) as e:
+            # Handle expected file system errors
+            ctk.CTkLabel(self.config_list, text="Error loading configs", text_color="red").pack(pady=20)
     
     def auto_refresh_loop(self):
         self.refresh_configs()
-        self.after(2000, self.auto_refresh_loop)
+        self.after(5000, self.auto_refresh_loop)  # Refresh every 5 seconds instead of 2
     
     def add_request(self):
         self.code_editor.insert("insert", '\nREQUEST GET "https://example.com"\n  HEADER "User-Agent: Mozilla/5.0"\n\n')

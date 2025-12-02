@@ -21,7 +21,6 @@ pyinstaller ^
     --hidden-import=undetected_chromedriver ^
     --exclude-module=playwright ^
     --exclude-module=playwright_stealth ^
-    --exclude-module=stealth_checker ^
     --optimize=2 ^
     --noconfirm ^
     gui.py
