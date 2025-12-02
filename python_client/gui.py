@@ -15,7 +15,7 @@ class CookieCheckerGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("🔥 Hybrid Cookie Checker - YashvirGaming")
+        self.title("🔥 Hybrid Cookie Checker")
         self.geometry("1000x700")
         
         self.grpc_client = None

@@ -20,7 +20,7 @@ class OpenBulletEditor(ctk.CTkToplevel):
         
         self.config_data = {
             'name': '',
-            'author': 'YashvirGaming',
+            'author': '',
             'version': '1.0',
             'url': '',
             'method': 'GET',
@@ -75,7 +75,7 @@ class OpenBulletEditor(ctk.CTkToplevel):
         # Config fields
         self.name_entry = self.create_field(left_panel, "Config Name:")
         self.author_entry = self.create_field(left_panel, "Author:")
-        self.author_entry.insert(0, "YashvirGaming")
+        self.author_entry.insert(0, "")
         self.version_entry = self.create_field(left_panel, "Version:")
         self.version_entry.insert(0, "1.0")
         self.url_entry = self.create_field(left_panel, "Target URL:")
