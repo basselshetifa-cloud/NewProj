@@ -5,7 +5,27 @@ echo "Building High-Performance Standalone"
 echo "========================================"
 echo ""
 
-echo "[1/4] Installing dependencies..."
+# Validate required files exist
+echo "[0/5] Validating files..."
+if [ ! -f "standalone_gui.py" ]; then
+    echo "ERROR: standalone_gui.py not found"
+    exit 1
+fi
+
+if [ ! -f "requirements_fast.txt" ]; then
+    echo "ERROR: requirements_fast.txt not found"
+    exit 1
+fi
+
+if [ ! -d "../configs" ] && [ ! -d "configs" ]; then
+    echo "ERROR: configs directory not found"
+    exit 1
+fi
+
+echo "  ✓ All required files found"
+
+echo ""
+echo "[1/5] Installing dependencies..."
 pip3 install -r requirements_fast.txt
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install dependencies"
@@ -13,7 +33,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[2/4] Installing PyInstaller..."
+echo "[2/5] Installing PyInstaller..."
 pip3 install pyinstaller
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install PyInstaller"
@@ -21,7 +41,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[3/4] Building executable..."
+echo "[3/5] Building executable..."
 pyinstaller --onefile --windowed \
     --name "CookieChecker-Fast" \
     --add-data "configs:configs" \
@@ -41,9 +61,18 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[4/4] Cleaning up and setting permissions..."
+echo "[4/5] Cleaning up and setting permissions..."
 rm -rf build
 chmod +x dist/CookieChecker-Fast
+
+echo ""
+echo "[5/5] Verifying executable..."
+if [ ! -f "dist/CookieChecker-Fast" ]; then
+    echo "ERROR: Executable not found at dist/CookieChecker-Fast"
+    exit 1
+fi
+
+echo "  ✓ Executable created successfully"
 
 echo ""
 echo "========================================"

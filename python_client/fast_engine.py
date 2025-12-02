@@ -61,7 +61,7 @@ class FastEngine:
             http2=True,  # Enable HTTP/2 for multiplexing
             follow_redirects=True,
             headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
             }
         )
         
@@ -101,7 +101,7 @@ class FastEngine:
             else:
                 cookies = json.loads(cookies_str)
             return cookies
-        except:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
         
         # Try key=value format
@@ -111,7 +111,7 @@ class FastEngine:
                 if '=' in item:
                     key, value = item.split('=', 1)
                     cookies[key.strip()] = value.strip()
-        except:
+        except (ValueError, AttributeError):
             pass
             
         return cookies

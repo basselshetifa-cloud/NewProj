@@ -4,7 +4,29 @@ echo Building High-Performance Standalone
 echo ========================================
 echo.
 
-echo [1/4] Installing dependencies...
+echo [0/5] Validating files...
+if not exist "standalone_gui.py" (
+    echo ERROR: standalone_gui.py not found
+    pause
+    exit /b 1
+)
+
+if not exist "requirements_fast.txt" (
+    echo ERROR: requirements_fast.txt not found
+    pause
+    exit /b 1
+)
+
+if not exist "..\configs" if not exist "configs" (
+    echo ERROR: configs directory not found
+    pause
+    exit /b 1
+)
+
+echo   √ All required files found
+
+echo.
+echo [1/5] Installing dependencies...
 pip install -r requirements_fast.txt
 if %errorlevel% neq 0 (
     echo ERROR: Failed to install dependencies
@@ -13,7 +35,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [2/4] Installing PyInstaller...
+echo [2/5] Installing PyInstaller...
 pip install pyinstaller
 if %errorlevel% neq 0 (
     echo ERROR: Failed to install PyInstaller
@@ -22,7 +44,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [3/4] Building executable...
+echo [3/5] Building executable...
 pyinstaller --onefile --windowed ^
     --name "CookieChecker-Fast" ^
     --add-data "configs;configs" ^
@@ -43,8 +65,18 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [4/4] Cleaning up...
+echo [4/5] Cleaning up...
 rmdir /s /q build 2>nul
+
+echo.
+echo [5/5] Verifying executable...
+if not exist "dist\CookieChecker-Fast.exe" (
+    echo ERROR: Executable not found at dist\CookieChecker-Fast.exe
+    pause
+    exit /b 1
+)
+
+echo   √ Executable created successfully
 
 echo.
 echo ========================================
