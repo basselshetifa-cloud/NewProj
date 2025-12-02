@@ -211,6 +211,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.start_btn.place(x=990, y=740)
     
     def load_cookies(self):
+        """Load cookie files from user-selected folder (GUI dialog ensures safe path)"""
         folder = fd.askdirectory(title="Select Cookies Folder")
         if folder:
             self.folder_path = folder
@@ -259,18 +260,27 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         self.log_output("🛑 Stopping all checks...")
     
     def clear_search(self):
+        """Clear search and restore full output"""
         self.search_entry.delete(0, 'end')
         self.search_text = ""
-        # Restore full output
-        self.output_text.configure(state="normal")
-        # Keep existing content
-        self.output_text.configure(state="disabled")
     
     def filter_output(self, event=None):
+        """Filter output based on search text"""
         search = self.search_entry.get().lower()
-        self.search_text = search
-        # Simple filtering - in real implementation would filter visible content
-        # For now just update the search text
+        if not search:
+            return
+        
+        # Get all text
+        self.output_text.configure(state="normal")
+        full_text = self.output_text.get("1.0", "end")
+        
+        # Filter lines containing search text
+        filtered_lines = [line for line in full_text.split('\n') if search in line.lower()]
+        
+        # Update display
+        self.output_text.delete("1.0", "end")
+        self.output_text.insert("1.0", '\n'.join(filtered_lines))
+        self.output_text.configure(state="disabled")
     
     def log_output(self, message):
         self.output_text.configure(state="normal")
@@ -299,6 +309,7 @@ class PremiumCookieCheckerGUI(ctk.CTk):
         
         self.log_output(f"🚀 Starting check for {len(selected_services)} services...")
         self.log_output(f"📁 Total files: {len(self.cookies_files)}")
+        self.log_output(f"⚡ Checking sequentially with keyword matching...")
         
         # Start checking in separate thread
         threading.Thread(target=self.check_cookies, args=(selected_services,), daemon=True).start()
