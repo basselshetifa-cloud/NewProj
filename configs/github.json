@@ -1,0 +1,53 @@
+{
+  "name": "GitHub",
+  "author": "YashvirGaming",
+  "version": "1.0",
+  "url": "https://api.github.com/user",
+  "method": "GET",
+  "cookie_format": "json",
+  "cookie_location": "header",
+  "blocks": [
+    {
+      "id": "1",
+      "type": "REQUEST",
+      "url": "https://api.github.com/user",
+      "method": "GET",
+      "headers": {
+        "Authorization": "token <COOKIE:user_session>",
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/vnd.github.v3+json"
+      },
+      "save_response": "github_user"
+    },
+    {
+      "id": "2",
+      "type": "PARSE",
+      "source": "github_user",
+      "parse_type": "json",
+      "captures": {
+        "username": "$.login",
+        "email": "$.email",
+        "name": "$.name",
+        "followers": "$.followers"
+      }
+    },
+    {
+      "id": "3",
+      "type": "KEY CHECK",
+      "conditions": [
+        {
+          "left": "<username>",
+          "condition": "EXISTS",
+          "right": ""
+        }
+      ],
+      "success": "HIT",
+      "failure": "BAD"
+    }
+  ],
+  "success_keywords": ["login", "id"],
+  "failure_keywords": ["Bad credentials"],
+  "needs_stealth": false,
+  "use_proxy": true,
+  "timeout": 15
+}
